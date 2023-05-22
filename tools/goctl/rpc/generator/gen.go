@@ -38,7 +38,8 @@ type ZRpcContext struct {
 	// Schema is the ent schema path
 	Schema string
 	// Ent
-	Ent bool
+	Ent  bool
+	Gorm bool
 	// ModuleName is the module name in go mod
 	ModuleName string
 	// GoZeroVersion describes the version of Go Zero
@@ -177,6 +178,10 @@ func (g *Generator) Generate(zctx *ZRpcContext) error {
 			makefileCmd += " -e"
 		}
 
+		if zctx.Gorm {
+			makefileCmd += " -go"
+		}
+
 		_, err = execx.Run(makefileCmd, abs)
 
 		if err != nil {
@@ -227,6 +232,58 @@ func (g *Generator) Generate(zctx *ZRpcContext) error {
 
 		paginationTplPath := filepath.Join(abs, "ent", "template", "pagination.tmpl")
 		notEmptyTplPath := filepath.Join(abs, "ent", "template", "not_empty_update.tmpl")
+		if !pathx.FileExists(paginationTplPath) {
+			err = os.WriteFile(paginationTplPath, []byte(template.PaginationTmpl), os.ModePerm)
+			if err != nil {
+				return err
+			}
+
+			err = os.WriteFile(notEmptyTplPath, []byte(template.NotEmptyTmpl), os.ModePerm)
+			if err != nil {
+				return err
+			}
+		}
+
+		// gen ent error handler
+		err = g.GenErrorHandler(dirCtx, proto, g.cfg, zctx)
+		if err != nil {
+			return err
+		}
+
+		// gen ent transaction util
+		err = g.GenEntTx(dirCtx, proto, g.cfg, zctx)
+		if err != nil {
+			return err
+		}
+
+		_, err = execx.Run("go mod tidy", abs)
+		if err != nil {
+			return err
+		}
+	} else if zctx.Gorm {
+		_, err := execx.Run(fmt.Sprintf("go run -mod=mod entgo.io/ent/cmd/ent new %s",
+			dirCtx.GetServiceName().ToCamel()), abs)
+		if err != nil {
+			return err
+		}
+
+		_, err = execx.Run("go mod tidy", abs)
+		if err != nil {
+			return err
+		}
+
+		_, err = execx.Run("go run -mod=mod github.com/smallnest/gen ./gorm/schema/config.json", abs)
+		if err != nil {
+			return err
+		}
+
+		err = pathx.MkdirIfNotExist(filepath.Join(abs, "gorm", "template"))
+		if err != nil {
+			return err
+		}
+
+		paginationTplPath := filepath.Join(abs, "gorm", "template", "pagination.tmpl")
+		notEmptyTplPath := filepath.Join(abs, "gorm", "template", "not_empty_update.tmpl")
 		if !pathx.FileExists(paginationTplPath) {
 			err = os.WriteFile(paginationTplPath, []byte(template.PaginationTmpl), os.ModePerm)
 			if err != nil {

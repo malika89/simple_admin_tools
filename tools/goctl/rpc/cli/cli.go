@@ -3,6 +3,7 @@ package cli
 import (
 	"errors"
 	"fmt"
+	"github.com/zeromicro/go-zero/tools/goctl/rpc/generator/gorm"
 	"path/filepath"
 	"strings"
 
@@ -58,7 +59,8 @@ var (
 	// VarIntSearchKeyNum describes the number of search keys
 	VarIntSearchKeyNum int
 	// VarBoolEnt describes whether the project use Ent
-	VarBoolEnt bool
+	VarBoolEnt  bool
+	VarBoolGorm bool
 	// VarStringModuleName describes the module name
 	VarStringModuleName string
 	// VarStringGoZeroVersion describes the version of Go Zero
@@ -142,6 +144,7 @@ func RPCNew(_ *cobra.Command, args []string) error {
 	ctx.UseDescDir = VarBoolDesc
 	ctx.RpcName = rpcname
 	ctx.Ent = VarBoolEnt
+	ctx.Gorm = VarBoolGorm
 	ctx.I18n = VarBoolI18n
 
 	if err := pathx.MkdirIfNotExist(ctx.GoOutput); err != nil {
@@ -217,6 +220,31 @@ func EntCRUDLogic(_ *cobra.Command, _ []string) error {
 	}
 
 	err = ent.GenEntLogic(params)
+	if err != nil {
+		return err
+	}
+
+	return err
+}
+
+func GormCRUDLogic(_ *cobra.Command, _ []string) error {
+	params := &gorm.GenGormLogicContext{
+		Schema:          VarStringSchema,
+		Output:          VarStringOutput,
+		ProjectName:     VarStringProjectName,
+		Style:           VarStringStyle,
+		SearchKeyNum:    VarIntSearchKeyNum,
+		ProtoOut:        VarStringProtoPath,
+		ProtoFieldStyle: VarStringProtoFieldStyle,
+		UseI18n:         VarBoolI18n,
+		Overwrite:       VarBoolOverwrite,
+	}
+	err := params.Validate()
+	if err != nil {
+		return err
+	}
+
+	err = gorm.GenGormLogic(params)
 	if err != nil {
 		return err
 	}

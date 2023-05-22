@@ -20,7 +20,8 @@ var (
 	newCmd    = cobrax.NewCommand("new", cobrax.WithRunE(cli.RPCNew), cobrax.WithArgs(cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs)))
 	protocCmd = cobrax.NewCommand("protoc", cobrax.WithRunE(cli.ZRPC), cobrax.WithArgs(cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs)))
 
-	entCmd = cobrax.NewCommand("ent", cobrax.WithRunE(cli.EntCRUDLogic))
+	entCmd  = cobrax.NewCommand("ent", cobrax.WithRunE(cli.EntCRUDLogic))
+	gormCmd = cobrax.NewCommand("gorm", cobrax.WithRunE(cli.GormCRUDLogic))
 )
 
 func init() {
@@ -30,6 +31,7 @@ func init() {
 		protocCmdFlags   = protocCmd.Flags()
 		templateCmdFlags = templateCmd.Flags()
 		entCmdFlags      = entCmd.Flags()
+		gormCmdFlags     = gormCmd.Flags()
 	)
 
 	rpcCmdFlags.StringVar(&cli.VarStringOutput, "o")
@@ -48,6 +50,7 @@ func init() {
 	newCmdFlags.MarkHidden("go_opt")
 	newCmdFlags.MarkHidden("go-grpc_opt")
 	newCmdFlags.BoolVarP(&cli.VarBoolEnt, "ent", "e")
+	newCmdFlags.BoolVarP(&cli.VarBoolGorm, "gorm", "r")
 	newCmdFlags.BoolVarP(&cli.VarBoolI18n, "i18n", "i")
 	newCmdFlags.StringVarP(&cli.VarStringModuleName, "module_name", "m")
 	newCmdFlags.StringVarPWithDefaultValue(&cli.VarStringGoZeroVersion, "go_zero_version", "z", config.DefaultGoZeroVersion)
@@ -95,8 +98,19 @@ func init() {
 	entCmdFlags.StringVarPWithDefaultValue(&cli.VarStringProtoFieldStyle, "proto_field_style", "f", config.DefaultFormat)
 	entCmdFlags.BoolVarP(&cli.VarBoolOverwrite, "overwrite", "w")
 
+	gormCmdFlags.StringVarP(&cli.VarStringSchema, "schema", "c")
+	gormCmdFlags.StringVarP(&cli.VarStringOutput, "output", "o")
+	gormCmdFlags.StringVarP(&cli.VarStringProjectName, "project_name", "p")
+	gormCmdFlags.BoolVarP(&cli.VarBoolI18n, "i18n", "i")
+	gormCmdFlags.StringVarPWithDefaultValue(&cli.VarStringStyle, "style", "s", config.DefaultFormat)
+	gormCmdFlags.IntVarPWithDefaultValue(&cli.VarIntSearchKeyNum, "search_key_num", "k", 3)
+	gormCmdFlags.StringVarP(&cli.VarStringProtoPath, "proto_out", "t")
+	gormCmdFlags.StringVarPWithDefaultValue(&cli.VarStringProtoFieldStyle, "proto_field_style", "f", config.DefaultFormat)
+	gormCmdFlags.BoolVarP(&cli.VarBoolOverwrite, "overwrite", "w")
+
 	Cmd.AddCommand(newCmd)
 	Cmd.AddCommand(protocCmd)
 	Cmd.AddCommand(templateCmd)
 	Cmd.AddCommand(entCmd)
+	Cmd.AddCommand(gormCmd)
 }

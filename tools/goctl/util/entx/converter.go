@@ -23,7 +23,7 @@ import (
 // ConvertEntTypeToProtoType returns prototype from ent type
 func ConvertEntTypeToProtoType(typeName string) string {
 	switch typeName {
-	case "float32":
+	case "float32", "decimal":
 		typeName = "float"
 	case "float64":
 		typeName = "double"
@@ -35,11 +35,14 @@ func ConvertEntTypeToProtoType(typeName string) string {
 		typeName = "uint64"
 	case "[16]byte":
 		typeName = "string"
-	case "uint8", "uint16":
+	case "uint8", "uint16", "tinyint":
 		typeName = "uint32"
 	case "int8", "int16":
 		typeName = "int32"
+	case "varchar", "char":
+		typeName = "string"
 	}
+
 	return typeName
 }
 

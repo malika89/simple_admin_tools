@@ -1,4 +1,4 @@
-# Simple Admin Tools
+cd# Simple Admin Tools
 
 ## This project is a fork from Go Zero. It contains lots of features for simple admin.
 ## 这是一个 Go Zero的fork项目，提供了很多针对simple admin 的优化

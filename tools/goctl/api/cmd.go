@@ -35,7 +35,8 @@ var (
 
 	protoCmd = cobrax.NewCommand("proto", cobrax.WithRunE(gogen.GenCRUDLogicByProto))
 
-	entCmd = cobrax.NewCommand("ent", cobrax.WithRunE(gogen.GenCRUDLogicByEnt))
+	entCmd  = cobrax.NewCommand("ent", cobrax.WithRunE(gogen.GenCRUDLogicByEnt))
+	gormCmd = cobrax.NewCommand("gorm", cobrax.WithRunE(gogen.GenCRUDLogicByGorm))
 )
 
 func init() {
@@ -53,6 +54,7 @@ func init() {
 		validateCmdFlags = validateCmd.Flags()
 		protoCmdFlags    = protoCmd.Flags()
 		entCmdFlags      = entCmd.Flags()
+		gormCmdFlags     = gormCmd.Flags()
 	)
 
 	apiCmdFlags.StringVar(&apigen.VarStringOutput, "o")
@@ -142,6 +144,17 @@ func init() {
 	entCmdFlags.BoolVarP(&gogen.VarBoolUseI18n, "i18n", "i")
 	entCmdFlags.StringVarPWithDefaultValue(&gogen.VarStringJSONStyle, "json_style", "j", "goZero")
 
+	gormCmdFlags.StringVarP(&gogen.VarStringSchema, "schema", "c")
+	gormCmdFlags.StringVarP(&gogen.VarStringOutput, "output", "o")
+	gormCmdFlags.StringVarP(&gogen.VarStringAPIServiceName, "api_service_name", "a")
+	gormCmdFlags.StringVarPWithDefaultValue(&gogen.VarStringStyle, "style", "s", config.DefaultFormat)
+	gormCmdFlags.StringVarP(&gogen.VarStringModelName, "model", "m")
+	gormCmdFlags.IntVarPWithDefaultValue(&gogen.VarIntSearchKeyNum, "search_key_num", "k", 3)
+	gormCmdFlags.StringVarP(&gogen.VarStringGroupName, "group", "g")
+	gormCmdFlags.BoolVarP(&gogen.VarBoolOverwrite, "overwrite", "w")
+	gormCmdFlags.BoolVarP(&gogen.VarBoolUseI18n, "i18n", "i")
+	gormCmdFlags.StringVarPWithDefaultValue(&gogen.VarStringJSONStyle, "json_style", "j", "goZero")
+
 	// Add sub-commands
 	Cmd.AddCommand(dartCmd)
 	Cmd.AddCommand(docCmd)
@@ -155,4 +168,5 @@ func init() {
 	Cmd.AddCommand(validateCmd)
 	Cmd.AddCommand(protoCmd)
 	Cmd.AddCommand(entCmd)
+	Cmd.AddCommand(gormCmd)
 }

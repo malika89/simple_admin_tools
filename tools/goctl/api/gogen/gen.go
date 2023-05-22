@@ -3,6 +3,7 @@ package gogen
 import (
 	"errors"
 	"fmt"
+	"github.com/zeromicro/go-zero/tools/goctl/api/gogen/gorm"
 	"os"
 	"path"
 	"path/filepath"
@@ -398,6 +399,33 @@ func GenCRUDLogicByEnt(_ *cobra.Command, _ []string) error {
 	}
 
 	err = ent.GenEntLogic(params)
+	if err != nil {
+		return err
+	}
+
+	return err
+}
+
+func GenCRUDLogicByGorm(_ *cobra.Command, _ []string) error {
+	params := &gorm.GenGormLogicContext{
+		Schema:       VarStringSchema,
+		Output:       VarStringOutput,
+		ServiceName:  VarStringAPIServiceName,
+		Style:        VarStringStyle,
+		ModelName:    VarStringModelName,
+		SearchKeyNum: VarIntSearchKeyNum,
+		GroupName:    VarStringGroupName,
+		JSONStyle:    VarStringJSONStyle,
+		UseI18n:      VarBoolUseI18n,
+		Overwrite:    VarBoolOverwrite,
+	}
+
+	err := params.Validate()
+	if err != nil {
+		return err
+	}
+
+	err = gorm.GenGormLogic(params)
 	if err != nil {
 		return err
 	}

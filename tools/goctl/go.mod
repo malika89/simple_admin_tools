@@ -4,12 +4,16 @@ go 1.20
 
 require (
 	entgo.io/ent v0.12.3
+	github.com/bxcodec/faker/v4 latest
 	github.com/emicklei/proto v1.11.2
 	github.com/fatih/structtag v1.2.0
 	github.com/gookit/color v1.5.3
 	github.com/iancoleman/strcase v0.2.0
 	github.com/jedib0t/go-pretty/v6 v6.4.6
+	github.com/jinzhu/gorm v1.9.16
+	github.com/ompluscator/dynamic-struct v1.3.0
 	github.com/pkg/errors v0.9.1
+	github.com/smallnest/gen v0.9.29
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.2
@@ -27,17 +31,22 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/color v1.15.0 // indirect
 	github.com/go-openapi/inflect v0.19.0 // indirect
+	github.com/go-sql-driver/mysql v1.7.0 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/hcl/v2 v2.16.2 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/jimsmart/schema v0.2.0 // indirect
+	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/kr/pretty v0.2.1 // indirect
+	github.com/logrusorgru/aurora v2.0.3+incompatible // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.18 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
+	github.com/serenize/snaker v0.0.0-20171204205717-a683aaf2d516 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 // indirect
 	github.com/zclconf/go-cty v1.13.1 // indirect

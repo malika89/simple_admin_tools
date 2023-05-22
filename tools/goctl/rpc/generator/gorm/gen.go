@@ -127,7 +127,7 @@ func genGormLogic(g *GenGormLogicContext) error {
 		protoFileName := filepath.Join(outputDir, "desc", s.StructName+".proto")
 		if !pathx.FileExists(protoFileName) || g.Overwrite {
 			err = os.WriteFile(protoFileName, []byte(fmt.Sprintf("syntax = \"proto3\";\n\nservice %s {\n}",
-				strcase.ToCamel(s.PackageName))), os.ModePerm)
+				strcase.ToCamel(g.ProjectName))), os.ModePerm)
 			if err != nil {
 				return fmt.Errorf("failed to create proto file : %s", err.Error())
 			}
@@ -189,35 +189,33 @@ func GenCRUDData(g *GenGormLogicContext, projectCtx *ctx.ProjectContext, schema 
 		} else {
 			if entx.IsTimeProperty(colType) {
 				hasTime = true
-				setLogic.WriteString(fmt.Sprintf("\t\t\t%s:\t(time.Unix(in.%s, 0))\n", parser.CamelCase(colName),
+				setLogic.WriteString(fmt.Sprintf("\t\t\t%s:\ttime.Unix(in.%s, 0)\n", parser.CamelCase(colName),
 					parser.CamelCase(colName)))
 			} else if entx.IsUpperProperty(colName) {
 				if entx.IsGoTypeNotPrototype(colType) {
 					if colType == "[16]byte" {
-						setLogic.WriteString(fmt.Sprintf("\t\t\t%s:\t(uuidx.ParseUUIDString(in.%s))\n", entx.ConvertSpecificNounToUpper(colName),
+						setLogic.WriteString(fmt.Sprintf("\t\t\t%s:\tuuidx.ParseUUIDString(in.%s)\n", entx.ConvertSpecificNounToUpper(colName),
 							parser.CamelCase(colName)))
 						hasUUID = true
 					} else {
-						setLogic.WriteString(fmt.Sprintf("\t\t\t%s:\t(%s(in.%s))\n", entx.ConvertSpecificNounToUpper(colName),
+						setLogic.WriteString(fmt.Sprintf("\t\t\t%s:\t%s(in.%s)\n", entx.ConvertSpecificNounToUpper(colName),
 							colType, parser.CamelCase(colName)))
 					}
 				} else {
-					setLogic.WriteString(fmt.Sprintf("\t\t\t%s:\t(in.%s)\n", entx.ConvertSpecificNounToUpper(colName),
+					setLogic.WriteString(fmt.Sprintf("\t\t\t%s:\tin.%s\n", entx.ConvertSpecificNounToUpper(colName),
 						parser.CamelCase(colName)))
 				}
 			} else {
 				if entx.IsGoTypeNotPrototype(colType) {
-					setLogic.WriteString(fmt.Sprintf("\t\t\t%s:\t(%s(in.%s))\n", parser.CamelCase(colName),
+					setLogic.WriteString(fmt.Sprintf("\t\t\t%s:\t%s(in.%s)\n", parser.CamelCase(colName),
 						colType, parser.CamelCase(colName)))
 				} else {
-					setLogic.WriteString(fmt.Sprintf("\t\t\t%s:\t(in.%s)\n", parser.CamelCase(colName),
+					setLogic.WriteString(fmt.Sprintf("\t\t\t%s:\tin.%s\n", parser.CamelCase(colName),
 						parser.CamelCase(colName)))
 				}
 			}
 		}
 	}
-	setLogic.WriteString("\t\t\tExec(l.ctx)")
-
 	createLogic := bytes.NewBufferString("")
 	logicTmpl, _ := template.New("create").Parse(createTpl)
 	_ = logicTmpl.Execute(createLogic, map[string]any{

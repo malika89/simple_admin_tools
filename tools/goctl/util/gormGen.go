@@ -419,7 +419,7 @@ func createFakeData(valueType string, name string) interface{} {
 
 func LoadTemplate(filename string) (tpl *dbmeta.GenTemplate, err error) {
 	baseName := filepath.Base(filename)
-	path := filepath.Dir(baseName)
+	path := filepath.Dir(filename)
 	baseTemplates := packr.New("gen", path)
 	content, err := baseTemplates.FindString(baseName)
 	if err != nil {

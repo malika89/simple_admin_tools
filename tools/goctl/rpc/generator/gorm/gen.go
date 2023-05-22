@@ -184,33 +184,33 @@ func GenCRUDData(g *GenGormLogicContext, projectCtx *ctx.ProjectContext, schema 
 			}
 			continue
 		} else if entx.IsOnlyEntType(colType) {
-			setLogic.WriteString(fmt.Sprintf("\t\t\t%s:\tin.%s\n", parser.CamelCase(colName),
+			setLogic.WriteString(fmt.Sprintf("\t\t\t%s:\tin.%s,\n", parser.CamelCase(colName),
 				parser.CamelCase(colName)))
 		} else {
 			if entx.IsTimeProperty(colType) {
 				hasTime = true
-				setLogic.WriteString(fmt.Sprintf("\t\t\t%s:\ttime.Unix(in.%s, 0)\n", parser.CamelCase(colName),
+				setLogic.WriteString(fmt.Sprintf("\t\t\t%s:\ttime.Unix(in.%s, 0),\n", parser.CamelCase(colName),
 					parser.CamelCase(colName)))
 			} else if entx.IsUpperProperty(colName) {
 				if entx.IsGoTypeNotPrototype(colType) {
 					if colType == "[16]byte" {
-						setLogic.WriteString(fmt.Sprintf("\t\t\t%s:\tuuidx.ParseUUIDString(in.%s)\n", entx.ConvertSpecificNounToUpper(colName),
+						setLogic.WriteString(fmt.Sprintf("\t\t\t%s:\tuuidx.ParseUUIDString(in.%s),\n", entx.ConvertSpecificNounToUpper(colName),
 							parser.CamelCase(colName)))
 						hasUUID = true
 					} else {
-						setLogic.WriteString(fmt.Sprintf("\t\t\t%s:\t%s(in.%s)\n", entx.ConvertSpecificNounToUpper(colName),
+						setLogic.WriteString(fmt.Sprintf("\t\t\t%s:\t%s(in.%s),\n", entx.ConvertSpecificNounToUpper(colName),
 							colType, parser.CamelCase(colName)))
 					}
 				} else {
-					setLogic.WriteString(fmt.Sprintf("\t\t\t%s:\tin.%s\n", entx.ConvertSpecificNounToUpper(colName),
+					setLogic.WriteString(fmt.Sprintf("\t\t\t%s:\tin.%s,\n", entx.ConvertSpecificNounToUpper(colName),
 						parser.CamelCase(colName)))
 				}
 			} else {
 				if entx.IsGoTypeNotPrototype(colType) {
-					setLogic.WriteString(fmt.Sprintf("\t\t\t%s:\t%s(in.%s)\n", parser.CamelCase(colName),
+					setLogic.WriteString(fmt.Sprintf("\t\t\t%s:\t%s(in.%s),\n", parser.CamelCase(colName),
 						colType, parser.CamelCase(colName)))
 				} else {
-					setLogic.WriteString(fmt.Sprintf("\t\t\t%s:\tin.%s\n", parser.CamelCase(colName),
+					setLogic.WriteString(fmt.Sprintf("\t\t\t%s:\tin.%s,\n", parser.CamelCase(colName),
 						parser.CamelCase(colName)))
 				}
 			}
@@ -310,22 +310,22 @@ func GenCRUDData(g *GenGormLogicContext, projectCtx *ctx.ProjectContext, schema 
 	getListLogic := bytes.NewBufferString("")
 	getListLogicTmpl, _ := template.New("getList").Parse(getListLogicTpl)
 	_ = getListLogicTmpl.Execute(getListLogic, map[string]any{
-		"modelName":          schema.StructName,
-		"listData":           listData.String(),
-		"projectName":        strings.ToLower(g.ProjectName),
-		"packageName":        packageName,
-		"useUUID":            g.UseUUID,
+		"modelName":   schema.StructName,
+		"listData":    listData.String(),
+		"projectName": strings.ToLower(g.ProjectName),
+		"packageName": packageName,
+		"useUUID":     g.UseUUID,
 	})
 	data.LogicCode += fmt.Sprintf("\n%s", getListLogic.String())
 
 	getByIdLogic := bytes.NewBufferString("")
 	getByIdLogicTmpl, _ := template.New("getById").Parse(getByIdLogicTpl)
 	_ = getByIdLogicTmpl.Execute(getByIdLogic, map[string]any{
-		"modelName":          schema.StructName,
-		"listData":           strings.Replace(listData.String(), "v.", "result.", -1),
-		"projectName":        strings.ToLower(g.ProjectName),
-		"packageName":        packageName,
-		"useUUID":            g.UseUUID,
+		"modelName":   schema.StructName,
+		"listData":    strings.Replace(listData.String(), "v.", "result.", -1),
+		"projectName": strings.ToLower(g.ProjectName),
+		"packageName": packageName,
+		"useUUID":     g.UseUUID,
 	})
 
 	data.LogicCode += fmt.Sprintf("\n%s", getByIdLogic.String())
@@ -333,11 +333,11 @@ func GenCRUDData(g *GenGormLogicContext, projectCtx *ctx.ProjectContext, schema 
 	deleteLogic := bytes.NewBufferString("")
 	deleteLogicTmpl, _ := template.New("delete").Parse(deleteLogicTpl)
 	err := deleteLogicTmpl.Execute(deleteLogic, map[string]any{
-		"modelName":          schema.StructName,
-		"projectName":        strings.ToLower(g.ProjectName),
-		"packageName":        packageName,
-		"useUUID":            g.UseUUID,
-		"useI18n":            g.UseI18n,
+		"modelName":   schema.StructName,
+		"projectName": strings.ToLower(g.ProjectName),
+		"packageName": packageName,
+		"useUUID":     g.UseUUID,
+		"useI18n":     g.UseI18n,
 	})
 	if err != nil {
 		fmt.Println(err)

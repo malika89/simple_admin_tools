@@ -5,7 +5,6 @@ import (
     "time"
 
     "github.com/google/uuid"
-    {{if .UseGuregu}} "github.com/guregu/null" {{end}}
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )

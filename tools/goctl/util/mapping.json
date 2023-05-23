@@ -322,7 +322,7 @@
       "json_type": "Float",
       "protobuf_type": "float",
       "guregu_type": "null.Float",
-      "go_nullable_type": "float64",
+      "go_nullable_type": "float32",
       "swagger_type": "float32"
     },
 
@@ -332,7 +332,7 @@
       "json_type": "Float",
       "protobuf_type": "float",
       "guregu_type": "null.Float",
-      "go_nullable_type": "float64",
+      "go_nullable_type": "float32",
       "swagger_type": "float32"
     },
     {
@@ -468,7 +468,7 @@
       "json_type": "Integer",
       "protobuf_type": "uint32",
       "guregu_type": "null.Int",
-      "go_nullable_type": "int64",
+      "go_nullable_type": "uint32",
       "swagger_type": "int"
     },
     {
@@ -477,7 +477,7 @@
       "json_type": "Integer",
       "protobuf_type": "uint32",
       "guregu_type": "null.Int",
-      "go_nullable_type": "int64",
+      "go_nullable_type": "uint32",
       "swagger_type": "int"
     },
     {
@@ -486,7 +486,7 @@
       "json_type": "Integer",
       "protobuf_type": "uint32",
       "guregu_type": "null.Int",
-      "go_nullable_type": "int64",
+      "go_nullable_type": "uint32",
       "swagger_type": "int"
     },
     {
@@ -495,7 +495,7 @@
       "json_type": "Integer",
       "protobuf_type": "uint32",
       "guregu_type": "null.Int",
-      "go_nullable_type": "int64",
+      "go_nullable_type": "uint32",
       "swagger_type": "int"
     },
     {
@@ -504,7 +504,7 @@
       "json_type": "Integer",
       "protobuf_type": "uint64",
       "guregu_type": "null.Int",
-      "go_nullable_type": "int64",
+      "go_nullable_type": "uint64",
       "swagger_type": "int64"
     },
     {
@@ -531,7 +531,7 @@
       "json_type": "Float",
       "protobuf_type": "float",
       "guregu_type": "null.Float",
-      "go_nullable_type": "float64",
+      "go_nullable_type": "float32",
       "swagger_type": "float32"
     },
     {
@@ -542,7 +542,7 @@
       "json_type": "Integer",
       "protobuf_type": "int32",
       "guregu_type": "null.Int",
-      "go_nullable_type": "int64",
+      "go_nullable_type": "int32",
       "swagger_type": "int"
     },
     {
@@ -553,7 +553,7 @@
       "json_type": "Integer",
       "protobuf_type": "int32",
       "guregu_type": "null.Int",
-      "go_nullable_type": "int64",
+      "go_nullable_type": "int32",
       "swagger_type": "int"
     },
     {
@@ -564,7 +564,7 @@
       "json_type": "Integer",
       "protobuf_type": "int32",
       "guregu_type": "null.Int",
-      "go_nullable_type": "int64",
+      "go_nullable_type": "int32",
       "swagger_type": "int"
     }
   ]

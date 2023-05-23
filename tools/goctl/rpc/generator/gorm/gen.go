@@ -147,7 +147,7 @@ func genGormLogic(g *GenGormLogicContext) error {
 
 		// generate new proto file
 		newProtoData := strings.Builder{}
-		serviceBeginIndex, _, serviceEndIndex := protox.FindBeginEndOfService(protoDataString, strcase.ToCamel(s.PackageName))
+		serviceBeginIndex, _, serviceEndIndex := protox.FindBeginEndOfService(protoDataString, strcase.ToCamel(g.ProjectName))
 		if serviceBeginIndex == -1 {
 			continue
 		}

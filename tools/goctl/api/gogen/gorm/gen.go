@@ -73,7 +73,7 @@ func genGormLogic(g *GenGormLogicContext) error {
 
 	logicDir := path.Join(outputDir, "internal/logic")
 
-	schemas, err := util.LoadTableSchemas(g.Schema)
+	schemas,_, err := util.LoadTableSchemas(g.Schema)
 	if err != nil {
 		return err
 	}

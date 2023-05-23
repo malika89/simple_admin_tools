@@ -16,9 +16,8 @@ func (l *{{.modelName}}Logic) Get{{.modelName}}List(in *{{.projectName}}.{{.mode
     	return nil, dberrorhandler.DefaultEntError(l.Logger, err, in)
     }
     resp.Total = uint64(count)
-	resp.Total = result.PageDetails.Total
 
-	for _, v := range result.List {
+	for _, v := range lists {
 		resp.Data = append(resp.Data, &{{.projectName}}.{{.modelName}}Info{
 			Id:          v.ID{{if .useUUID}}.String(){{end}},
 			CreatedAt:   v.CreatedAt.UnixMilli(),

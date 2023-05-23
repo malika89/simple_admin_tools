@@ -2,9 +2,6 @@ package {{.modelPackageName}}
 
 import (
     "database/sql"
-    "time"
-
-    "github.com/google/uuid"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )

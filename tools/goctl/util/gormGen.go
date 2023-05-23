@@ -48,36 +48,32 @@ type GormConfig struct {
 	DB             *sql.DB
 }
 
-func LoadTableSchemas(path string) (tables map[string]*dbmeta.ModelInfo, err error) {
+func LoadTableSchemas(path string) (map[string]*dbmeta.ModelInfo,GormConfig, error) {
 	var cfg GormConfig
 	if err := loadMapping(); err != nil {
-		return nil, err
+		return nil,cfg, err
 	}
 	content, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Fatal("Error when opening file: ", err)
 	}
 	if err = json.Unmarshal(content, &cfg); err != nil {
-		return nil, err
+		return nil,cfg, err
 	}
 	db, err := sql.Open(cfg.SQLType, cfg.SQLConnStr)
 	if err != nil {
 		fmt.Printf("Error in open database: %v\n\n", err.Error())
-		return nil, err
+		return nil,cfg, err
 	}
 
 	err = db.Ping()
 	if err != nil {
 		fmt.Printf("Error pinging database: %v\n\n", err.Error())
-		return nil, err
+		return nil,cfg, err
 	}
 	cfg.DB = db
-
 	tableInfos := cfg.loadTableInfo()
-	if err = cfg.loadTemplate(tableInfos); err != nil {
-		fmt.Printf("write struct error:%v", err)
-	}
-	return tableInfos, nil
+	return tableInfos, cfg,nil
 }
 func (conf *GormConfig) loadTableInfo() map[string]*dbmeta.ModelInfo {
 
@@ -171,7 +167,7 @@ func (conf *GormConfig) generateModelInfo(dbMeta dbmeta.DbTableMeta, tableName, 
 	return modelInfo, nil
 }
 
-func (conf *GormConfig) loadTemplate(tables map[string]*dbmeta.ModelInfo) error {
+func (conf *GormConfig) LocalLoadTemplate(tables map[string]*dbmeta.ModelInfo,outPut string) error {
 	var (
 		ModelTmpl *dbmeta.GenTemplate
 		err       error
@@ -184,7 +180,6 @@ func (conf *GormConfig) loadTemplate(tables map[string]*dbmeta.ModelInfo) error 
 		AddJSONAnnotation:   conf.AddJSONTag,
 		AddGormAnnotation:   conf.AddGormTag,
 		JSONNameFormat:      conf.JSONNameFormat,
-		OutDir:              filepath.Join(),
 		Overwrite:           true,
 		FileNamingTemplate:  "{{.}}",
 		ModelNamingTemplate: "{{FmtFieldName .}}",
@@ -198,14 +193,15 @@ func (conf *GormConfig) loadTemplate(tables map[string]*dbmeta.ModelInfo) error 
 		return fmt.Errorf("Can not get current file info")
 	}
 	currentDir := filepath.Dir(currentPath)
-	fileName := filepath.Join(filepath.Dir(currentDir), "rpc", "generator", "gorm", "model.go.tpl")
+	fileName := filepath.Join(filepath.Dir(currentDir), "gorm", "model.go.tpl")
 	if ModelTmpl, err = genConf.TemplateLoader(fileName); err != nil {
 		fmt.Printf("Error loading template %v\n", err)
 		return err
 	}
-	workDir, _ := filepath.Abs("/")
+	outputDir, _ := filepath.Abs(outPut)
 	for _, table := range tables {
-		modelDir := filepath.Join(workDir, "gorm", table.PackageName)
+		genConf.ModelPackageName = table.PackageName
+		modelDir := filepath.Join(outputDir, "gorm", table.PackageName)
 		if err = pathx.MkdirIfNotExist(modelDir); err != nil {
 			return err
 		}
@@ -423,8 +419,8 @@ func LoadTemplate(filename string) (tpl *dbmeta.GenTemplate, err error) {
 	baseTemplates := packr.New("gen", path)
 	content, err := baseTemplates.FindString(baseName)
 	if err != nil {
-		return nil, fmt.Errorf("%s not found internally", baseName)
+		return nil, fmt.Errorf("%s not found internally under path:%s", baseName,path)
 	}
-	tpl = &dbmeta.GenTemplate{Name: "internal://" + filename, Content: content}
+	tpl = &dbmeta.GenTemplate{Name: filename, Content: content}
 	return tpl, nil
 }

@@ -33,4 +33,4 @@ go.work.sum
 coverage.txt
 
 *.log
-.exe
+*.exe

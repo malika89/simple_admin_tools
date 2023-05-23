@@ -1,5 +1,5 @@
 func (l *{{.modelName}}Logic) Update{{.modelName}}(in *{{.projectName}}.{{.modelName}}Info) (*{{.projectName}}.BaseResp, error) {
-    record = &{{.packageName}}.{{.modelName}}{
+    record := &{{.packageName}}.{{.modelName}}{
 {{.setLogic}}
        }
     err := l.svcCtx.DB.Updates(record).Error

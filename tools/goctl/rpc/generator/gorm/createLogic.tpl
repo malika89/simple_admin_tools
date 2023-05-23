@@ -31,7 +31,7 @@ func New{{.modelName}}Logic(ctx context.Context, svcCtx *svc.ServiceContext) *{{
 }
 
 func (l *{{.modelName}}Logic) Create{{.modelName}}(in *{{.projectName}}.{{.modelName}}Info) (*{{.projectName}}.Base{{if .useUUID}}UU{{end}}IDResp, error) {
-    record = &{{.packageName}}.{{.modelName}}{
+    record := &{{.packageName}}.{{.modelName}}{
 {{.setLogic}}
     }
     err := l.svcCtx.DB.Create(record).Error

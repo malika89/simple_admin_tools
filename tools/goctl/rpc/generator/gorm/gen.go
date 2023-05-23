@@ -92,11 +92,13 @@ func genGormLogic(g *GenGormLogicContext) error {
 		return err
 	}
 
-	schemas, err := util.LoadTableSchemas(g.Schema)
+	schemas, cfg, err := util.LoadTableSchemas(g.Schema)
 	if err != nil {
 		return err
 	}
-
+	if err = cfg.LocalLoadTemplate(schemas, outputDir); err != nil {
+		fmt.Printf("write struct error:%v with outputDir:%s", err,outputDir)
+	}
 	for _, s := range schemas {
 		rpcLogicData := GenCRUDData(g, projectCtx, s)
 		logicFilename, err := format.FileNamingFormat(g.Style, rpcLogicData.LogicName)

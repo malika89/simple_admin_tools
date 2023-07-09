@@ -407,17 +407,16 @@ func GenCRUDLogicByEnt(_ *cobra.Command, _ []string) error {
 }
 
 func GenCRUDLogicByGorm(_ *cobra.Command, _ []string) error {
-	params := &gorm.GenGormLogicContext{
-		Schema:       VarStringSchema,
-		Output:       VarStringOutput,
-		ServiceName:  VarStringAPIServiceName,
-		Style:        VarStringStyle,
-		ModelName:    VarStringModelName,
-		SearchKeyNum: VarIntSearchKeyNum,
-		GroupName:    VarStringGroupName,
-		JSONStyle:    VarStringJSONStyle,
-		UseI18n:      VarBoolUseI18n,
-		Overwrite:    VarBoolOverwrite,
+	params := &gorm.GenGormLogicContextByAPI{
+		NamingStyle:    VarStringStyle,
+		Dir:            VarStringDir,
+		ModuleName:     VarStringModelName,
+		UseCasbin:      VarBoolUseCasbin,
+		TransErr:       VarBoolErrorTranslate,
+		RpcName:        VarStringRpcName,
+		RpcPackageName: VarStringGrpcPbPackage,
+		UseI18n:        VarBoolUseI18n,
+		Overwrite:      VarBoolOverwrite,
 	}
 
 	err := params.Validate()
@@ -425,7 +424,7 @@ func GenCRUDLogicByGorm(_ *cobra.Command, _ []string) error {
 		return err
 	}
 
-	err = gorm.GenGormLogic(params)
+	err = gorm.GenGormApiFile(params)
 	if err != nil {
 		return err
 	}

@@ -7,8 +7,6 @@ func (l *{{.modelName}}Logic) Get{{.modelName}}ById(in *{{.projectName}}.{{if .u
 
 	return &{{.projectName}}.{{.modelName}}Info{
 		Id:          record.ID,
-		CreatedAt:   result.CreatedAt.UnixMilli(),
-		UpdatedAt:   result.UpdatedAt.UnixMilli(),
 {{.listData}}
 	}, nil
 }

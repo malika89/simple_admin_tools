@@ -97,7 +97,7 @@ func genGormLogic(g *GenGormLogicContext) error {
 		return err
 	}
 	if err = cfg.LocalLoadTemplate(schemas, outputDir); err != nil {
-		fmt.Printf("write struct error:%v with outputDir:%s", err,outputDir)
+		fmt.Printf("write struct error:%v with outputDir:%s", err, outputDir)
 	}
 	for _, s := range schemas {
 		rpcLogicData := GenCRUDData(g, projectCtx, s)
@@ -324,7 +324,7 @@ func GenCRUDData(g *GenGormLogicContext, projectCtx *ctx.ProjectContext, schema 
 	getByIdLogicTmpl, _ := template.New("getById").Parse(getByIdLogicTpl)
 	_ = getByIdLogicTmpl.Execute(getByIdLogic, map[string]any{
 		"modelName":   schema.StructName,
-		"listData":    strings.Replace(listData.String(), "v.", "result.", -1),
+		"listData":    strings.Replace(listData.String(), "v.", "record.", -1),
 		"projectName": strings.ToLower(g.ProjectName),
 		"packageName": packageName,
 		"useUUID":     g.UseUUID,

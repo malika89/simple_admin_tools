@@ -1,391 +1,124 @@
 package gorm
 
 import (
-	"bytes"
 	_ "embed"
 	"errors"
 	"fmt"
-	"github.com/smallnest/gen/dbmeta"
-	"github.com/zeromicro/go-zero/tools/goctl/util"
+	"github.com/gookit/color"
+	"github.com/zeromicro/go-zero/core/collection"
+	"github.com/zeromicro/go-zero/core/logx"
+	apiformat "github.com/zeromicro/go-zero/tools/goctl/api/format"
+	apiParser "github.com/zeromicro/go-zero/tools/goctl/api/parser"
+	"github.com/zeromicro/go-zero/tools/goctl/config"
+	"github.com/zeromicro/go-zero/tools/goctl/pkg/golang"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
-	"text/template"
-
-	"github.com/gookit/color"
-	"github.com/iancoleman/strcase"
-	"github.com/zeromicro/go-zero/core/logx"
-
-	"github.com/zeromicro/go-zero/tools/goctl/rpc/parser"
-	"github.com/zeromicro/go-zero/tools/goctl/util/ctx"
-	"github.com/zeromicro/go-zero/tools/goctl/util/entx"
-	"github.com/zeromicro/go-zero/tools/goctl/util/format"
-	"github.com/zeromicro/go-zero/tools/goctl/util/pathx"
 )
 
-const regularPerm = 0o666
+const (
+	regularPerm = 0o666
+	tmpFile     = "%s-%d"
+)
+
+var tmpDir = path.Join(os.TempDir(), "goctls")
 
 type ApiLogicData struct {
 	LogicName string
 	LogicCode string
 }
 
-type GenGormLogicContext struct {
-	Schema       string
-	Output       string
-	ServiceName  string
-	Style        string
-	ModelName    string
-	SearchKeyNum int
-	GroupName    string
-	UseUUID      bool
-	JSONStyle    string
-	UseI18n      bool
-	Overwrite    bool
+type GenGormLogicContextByAPI struct {
+	ModuleName     string
+	RpcName        string
+	RpcPackageName string
+	Dir            string
+	NamingStyle    string
+	Overwrite      bool
+	UseCasbin      bool
+	UseI18n        bool
+	UseUUID        bool
+	TransErr       bool
 }
 
-func (g GenGormLogicContext) Validate() error {
-	if g.Schema == "" {
-		return errors.New("the schema dir cannot be empty ")
-	} else if !strings.HasSuffix(g.Schema, "schema") {
-		return errors.New("please input correct schema directory e.g. ./gorm/schema ")
-	} else if g.ServiceName == "" {
-		return errors.New("please set the API service name via --api_service_name")
-	} else if g.ModelName == "" {
-		return errors.New("please set the model name via --model ")
+func (g GenGormLogicContextByAPI) Validate() error {
+	if g.ModuleName == "" {
+		return errors.New("please set the API service name via --api_service_name ")
+	} else if g.RpcName == "" {
+		return errors.New("please set the RPC service name via --rpc_name ")
 	}
 	return nil
 }
 
-// GenGormLogic generates the gorm CRUD logic files of the api service.
-func GenGormLogic(g *GenGormLogicContext) error {
-	return genGormLogic(g)
-}
-
-func genGormLogic(g *GenGormLogicContext) error {
-	color.Green.Println("Generating")
-
-	outputDir, err := filepath.Abs(g.Output)
+func GenGormApiFile(g *GenGormLogicContextByAPI) error {
+	allFiles, _ := getAllFile(g.Dir)
+	dir := filepath.Dir(g.Dir)
+	color.Green.Println("Generating...")
+	if len(allFiles) < 1 {
+		return errors.New("empty dir")
+	}
+	cfg, err := config.NewConfig(g.NamingStyle)
 	if err != nil {
 		return err
 	}
-
-	logicDir := path.Join(outputDir, "internal/logic")
-
-	schemas,_, err := util.LoadTableSchemas(g.Schema)
+	rootPkg, err := golang.GetParentPackage(dir)
+	rootPkg = filepath.Dir(rootPkg)
 	if err != nil {
 		return err
 	}
-
-	workDir, err := filepath.Abs("./")
-	if err != nil {
-		return err
-	}
-
-	projectCtx, err := ctx.Prepare(workDir)
-	if err != nil {
-		return err
-	}
-
-	for _, s := range schemas {
-		if g.ModelName == s.StructName || g.ModelName == "" {
-			// generate logic file
-			apiLogicData := GenCRUDData(g, projectCtx, s)
-
-			for _, v := range apiLogicData {
-				logicFilename, err := format.FileNamingFormat(g.Style, v.LogicName)
-				if err != nil {
-					return err
-				}
-
-				// group
-				var filename string
-				if g.GroupName != "" {
-					if err = pathx.MkdirIfNotExist(filepath.Join(logicDir, g.GroupName)); err != nil {
-						return err
-					}
-
-					filename = filepath.Join(logicDir, g.GroupName, logicFilename+".go")
-				} else {
-					filename = filepath.Join(logicDir, logicFilename+".go")
-				}
-
-				if pathx.FileExists(filename) && !g.Overwrite {
-					continue
-				}
-
-				err = os.WriteFile(filename, []byte(v.LogicCode), regularPerm)
-				if err != nil {
-					return err
-				}
-			}
-
-			// generate api file
-			apiData, err := GenApiData(s, g)
-			if err != nil {
-				return err
-			}
-
-			apiFilePath := filepath.Join(workDir, "desc", fmt.Sprintf("%s.api", strcase.ToSnake(g.ModelName)))
-
-			if pathx.FileExists(apiFilePath) && !g.Overwrite {
-				return nil
-			}
-
-			err = os.WriteFile(apiFilePath, []byte(apiData), regularPerm)
-			if err != nil {
-				return err
-			}
-
-			allApiFile := filepath.Join(workDir, "desc", "all.api")
-			allApiData, err := os.ReadFile(allApiFile)
-			if err != nil {
-				return err
-			}
-			allApiString := string(allApiData)
-
-			if !strings.Contains(allApiString, fmt.Sprintf("%s.api", strcase.ToSnake(g.ModelName))) {
-				allApiString += fmt.Sprintf("\nimport \"%s\"", fmt.Sprintf("%s.api", strcase.ToSnake(g.ModelName)))
-			}
-
-			err = os.WriteFile(allApiFile, []byte(allApiString), regularPerm)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	color.Green.Println("Generate Ent Logic files for API successfully")
-
-	return nil
-}
-
-func GenCRUDData(g *GenGormLogicContext, projectCtx *ctx.ProjectContext, schema *dbmeta.ModelInfo) []*ApiLogicData {
-	var data []*ApiLogicData
-	hasTime, hasUUID := false, false
-	// end string means whether to use \n
-	endString := ""
-	var packageName string
-	if g.GroupName != "" {
-		packageName = g.GroupName
-	} else {
-		packageName = "logic"
-	}
-
-	setLogic := strings.Builder{}
-	for _, v := range schema.DBMeta.Columns() {
-		colName := v.Name()
-		colType := v.ColumnType()
-		if entx.IsBaseProperty(colName) {
-			if colName == "id" && entx.IsUUIDType(colType) {
-				g.UseUUID = true
-			}
-			continue
-		} else {
-			if entx.IsTimeProperty(colType) {
-				hasTime = true
-				setLogic.WriteString(fmt.Sprintf("\t\t\tSet%s(time.Unix(req.%s, 0)).\n", parser.CamelCase(v.Name()),
-					parser.CamelCase(colName)))
-			} else if entx.IsUpperProperty(colName) {
-				if entx.IsUUIDType(colType) {
-					setLogic.WriteString(fmt.Sprintf("\t\t\tSet%s(uuidx.ParseUUIDString(req.%s)).\n", entx.ConvertSpecificNounToUpper(v.Name()),
-						parser.CamelCase(colName)))
-					hasUUID = true
-				} else {
-					setLogic.WriteString(fmt.Sprintf("\t\t\tSet%s(req.%s).\n", entx.ConvertSpecificNounToUpper(v.Name()),
-						parser.CamelCase(colName)))
-				}
-			} else {
-				setLogic.WriteString(fmt.Sprintf("\t\t\tSet%s(req.%s).\n", parser.CamelCase(v.Name()),
-					parser.CamelCase(colName)))
-			}
-		}
-	}
-	setLogic.WriteString("\t\t\tExec(l.ctx)")
-
-	createLogic := bytes.NewBufferString("")
-	createLogicTmpl, _ := template.New("create").Parse(createTpl)
-	_ = createLogicTmpl.Execute(createLogic, map[string]any{
-		"hasTime":     hasTime,
-		"hasUUID":     hasUUID,
-		"setLogic":    strings.ReplaceAll(setLogic.String(), "Exec", "Save"),
-		"modelName":   schema.StructName,
-		"projectPath": projectCtx.Path,
-		"packageName": packageName,
-		"useUUID":     g.UseUUID, // UUID primary key
-		"useI18n":     g.UseI18n,
-	})
-
-	data = append(data, &ApiLogicData{
-		LogicName: fmt.Sprintf("Create%sLogic", schema.StructName),
-		LogicCode: createLogic.String(),
-	})
-
-	updateLogic := bytes.NewBufferString("")
-	updateLogicTmpl, _ := template.New("update").Parse(updateTpl)
-	_ = updateLogicTmpl.Execute(updateLogic, map[string]any{
-		"hasTime":     hasTime,
-		"hasUUID":     hasUUID,
-		"setLogic":    strings.Replace(setLogic.String(), "Set", "SetNotEmpty", -1),
-		"modelName":   schema.StructName,
-		"projectPath": projectCtx.Path,
-		"packageName": packageName,
-		"useUUID":     g.UseUUID, // UUID primary key
-		"useI18n":     g.UseI18n,
-	})
-
-	data = append(data, &ApiLogicData{
-		LogicName: fmt.Sprintf("Update%sLogic", schema.StructName),
-		LogicCode: updateLogic.String(),
-	})
-
-	predicateData := strings.Builder{}
-	predicateData.WriteString(fmt.Sprintf("\tvar predicates []predicate.%s\n", schema.StructName))
-	count := 0
-	for _, v := range schema.DBMeta.Columns() {
-		if v.ColumnType() == "string" && !strings.Contains(strings.ToLower(v.Name()), "uuid") &&
-			count < g.SearchKeyNum && !entx.IsBaseProperty(v.Name()) {
-			camelName := parser.CamelCase(v.Name())
-			predicateData.WriteString(fmt.Sprintf("\tif req.%s != \"\" {\n\t\tpredicates = append(predicates, %s.%sContains(req.%s))\n\t}\n",
-				camelName, strings.ToLower(schema.StructName), entx.ConvertSpecificNounToUpper(v.Name()), camelName))
-			count++
-		}
-	}
-	predicateData.WriteString(fmt.Sprintf("\tdata, err := l.svcCtx.DB.%s.Query().Where(predicates...).Page(l.ctx, req.Page, req.PageSize)",
-		schema.StructName))
-
-	listData := strings.Builder{}
-
-	for i, v := range schema.DBMeta.Columns() {
-		if entx.IsBaseProperty(v.Name()) {
-			continue
-		} else {
-			nameCamelCase := parser.CamelCase(v.Name())
-
-			if i < (len(schema.Fields) - 1) {
-				endString = "\n"
-			} else {
-				endString = ""
-			}
-
-			if entx.IsUUIDType(v.ColumnType()) {
-				listData.WriteString(fmt.Sprintf("\t\t\t%s:\tv.%s.String(),%s", nameCamelCase,
-					entx.ConvertSpecificNounToUpper(nameCamelCase), endString))
-			} else if entx.IsTimeProperty(v.ColumnType()) {
-				listData.WriteString(fmt.Sprintf("\t\t\t%s:\tv.%s.UnixMilli(),%s", nameCamelCase,
-					entx.ConvertSpecificNounToUpper(nameCamelCase), endString))
-			} else {
-				if entx.IsUpperProperty(v.Name()) {
-					listData.WriteString(fmt.Sprintf("\t\t\t%s:\tv.%s,%s", nameCamelCase,
-						entx.ConvertSpecificNounToUpper(v.Name()), endString))
-				} else {
-					listData.WriteString(fmt.Sprintf("\t\t\t%s:\tv.%s,%s", nameCamelCase,
-						nameCamelCase, endString))
-				}
-			}
-		}
-	}
-
-	getListLogic := bytes.NewBufferString("")
-	getListLogicTmpl, _ := template.New("getList").Parse(getListLogicTpl)
-	_ = getListLogicTmpl.Execute(getListLogic, map[string]any{
-		"predicateData":      predicateData.String(),
-		"modelName":          schema.StructName,
-		"listData":           listData.String(),
-		"projectPath":        projectCtx.Path,
-		"modelNameLowerCase": strings.ToLower(schema.StructName),
-		"packageName":        packageName,
-		"useUUID":            g.UseUUID,
-		"useI18n":            g.UseI18n,
-	})
-
-	data = append(data, &ApiLogicData{
-		LogicName: fmt.Sprintf("Get%sListLogic", schema.StructName),
-		LogicCode: getListLogic.String(),
-	})
-
-	getByIdLogic := bytes.NewBufferString("")
-	getByIdLogicTmpl, _ := template.New("getById").Parse(getByIdLogicTpl)
-	_ = getByIdLogicTmpl.Execute(getByIdLogic, map[string]any{
-		"modelName":          schema.StructName,
-		"listData":           strings.Replace(listData.String(), "v.", "data.", -1),
-		"projectPath":        projectCtx.Path,
-		"modelNameLowerCase": strings.ToLower(schema.StructName),
-		"packageName":        packageName,
-		"useUUID":            g.UseUUID,
-		"useI18n":            g.UseI18n,
-	})
-
-	data = append(data, &ApiLogicData{
-		LogicName: fmt.Sprintf("Get%sByIdLogic", schema.StructName),
-		LogicCode: getByIdLogic.String(),
-	})
-
-	deleteLogic := bytes.NewBufferString("")
-	deleteLogicTmpl, _ := template.New("delete").Parse(deleteLogicTpl)
-	_ = deleteLogicTmpl.Execute(deleteLogic, map[string]any{
-		"modelName":          schema.StructName,
-		"modelNameLowerCase": strings.ToLower(schema.StructName),
-		"projectPath":        projectCtx.Path,
-		"packageName":        packageName,
-		"useUUID":            g.UseUUID,
-		"useI18n":            g.UseI18n,
-	})
-
-	data = append(data, &ApiLogicData{
-		LogicName: fmt.Sprintf("Delete%sLogic", schema.StructName),
-		LogicCode: deleteLogic.String(),
-	})
-
-	return data
-}
-
-func GenApiData(schema *dbmeta.ModelInfo, ctx *GenGormLogicContext) (string, error) {
-	infoData := strings.Builder{}
-	listData := strings.Builder{}
-	searchKeyNum := ctx.SearchKeyNum
-	var data string
-
-	for _, v := range schema.DBMeta.Columns() {
-		if entx.IsBaseProperty(v.Name()) {
+	var (
+		middlewareStr        string
+		middlewareAssignment string
+		cfgImport            string
+		typesVals            string
+		routesVals           string
+		routeImports         []collection.Set
+		routeTimeOut         bool
+	)
+	for _, apiFile := range allFiles {
+		fileName := filepath.Base(apiFile)
+		if fileName == "all.api" {
 			continue
 		}
-
-		var structData string
-
-		jsonTag, err := format.FileNamingFormat(ctx.JSONStyle, v.Name())
+		api, err := apiParser.Parse(apiFile)
 		if err != nil {
-			return "", err
+			color.Red.Printf("parse apifile error:%v\n ",err)
+			continue
 		}
+		if err := api.Validate(); err != nil {
+			color.Red.Printf("Validate apifile error:%v\n ",err)
+			continue
+		}
+		// svc引入逻辑补充
+		middlewareStr_, middlewareAssignment_, configImport_ := getMiddleWares(rootPkg, api)
+		middlewareStr += middlewareStr_
+		middlewareAssignment += middlewareAssignment_
+		cfgImport += configImport_
 
-		structData = fmt.Sprintf("\n\n        // %s\n        %s  %s `json:\"%s,optional\"`",
-			parser.CamelCase(v.Name()),
-			parser.CamelCase(v.Name()),
-			entx.ConvertEntTypeToGotypeInSingleApi(v.ColumnType()),
-			jsonTag)
+		// types 补充
+		typesVal, _ := genTypes(cfg, api)
+		typesVals += typesVal
 
-		infoData.WriteString(structData)
-
-		if v.ColumnType() == "string" && searchKeyNum > 0 {
-			listData.WriteString(structData)
-			searchKeyNum--
+		// route 补充
+		if routeStr, timeout, err := genRoutes(api); err == nil {
+			routesVals += strings.TrimSpace(routeStr)
+			routeImports = append(routeImports, *genRouteImports(rootPkg, api))
+			routeTimeOut = timeout
+		}
+		logx.Must(genHandlers(dir, rootPkg, fileName, api, g))
+		logx.Must(genLogics(dir, rootPkg,fileName, cfg,api, g))
+		if err := backupAndSweep(apiFile); err != nil {
+			return err
+		}
+		if err := apiformat.ApiFormatByPath(apiFile, false); err != nil {
+			return err
 		}
 	}
-
-	apiTemplateData := bytes.NewBufferString("")
-	apiTmpl, _ := template.New("gormApiTpl").Parse(apiTpl)
-	logx.Must(apiTmpl.Execute(apiTemplateData, map[string]any{
-		"infoData":       infoData.String(),
-		"modelName":      ctx.ModelName,
-		"modelNameSpace": strings.Replace(strcase.ToSnake(ctx.ModelName), "_", " ", -1),
-		"groupName":      ctx.GroupName,
-		"modelNameSnake": strcase.ToSnake(ctx.ModelName),
-		"listData":       listData.String(),
-		"apiServiceName": strcase.ToCamel(ctx.ServiceName),
-		"useUUID":        ctx.UseUUID,
-	}))
-	data = apiTemplateData.String()
-
-	return data, nil
+	logx.Must(genServiceContext(dir, rootPkg, cfg, g, map[string]string{"configImport": cfgImport,
+		"middlewareStr": middlewareStr, "middlewareAssignment": middlewareAssignment}))
+	logx.Must(genTypesFile(dir, cfg, typesVals))
+	logx.Must(genRouteFile(dir, cfg, routeTimeOut, routesVals, sortRouteImports(routeImports)))
+	fmt.Println(color.Green.Render("Done."))
+	return nil
 }

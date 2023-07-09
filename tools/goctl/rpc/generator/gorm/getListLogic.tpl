@@ -6,7 +6,7 @@ func (l *{{.modelName}}Logic) Get{{.modelName}}List(in *{{.projectName}}.{{.mode
 
 	resp := &{{.projectName}}.{{.modelName}}ListResp{}
 	db := l.svcCtx.DB
-	for k, v:= range in.Filters {
+	for k, v:= range in.Filter {
 		db = db.Where("? = ?",k, v)
 	}
 	db.Count(&count)
@@ -20,8 +20,6 @@ func (l *{{.modelName}}Logic) Get{{.modelName}}List(in *{{.projectName}}.{{.mode
 	for _, v := range lists {
 		resp.Data = append(resp.Data, &{{.projectName}}.{{.modelName}}Info{
 			Id:          v.ID{{if .useUUID}}.String(){{end}},
-			CreatedAt:   v.CreatedAt.UnixMilli(),
-			UpdatedAt:   v.UpdatedAt.UnixMilli(),
 {{.listData}}
 		})
 	}

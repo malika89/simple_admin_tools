@@ -42,7 +42,7 @@ type (
     middleware: Authority
 )
 
-service {{.apiServiceName}} {
+service {{.modelNameLowerCase}} {
     // Create {{.modelNameSpace}} information | 创建{{.modelName}}
     @handler create{{.modelName}}
     post /{{.modelNameSnake}}/create ({{.modelName}}Info) returns (BaseMsgResp)
